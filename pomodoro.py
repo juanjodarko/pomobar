@@ -20,9 +20,9 @@ if not os.path.exists(LOG_FILE):
     with open(LOG_FILE, 'w') as f:
         f.write("Pomodoro Log\n")
 
-def update_timer(time_left):
+def update_timer(state, time_left):
     with open(TIMER_FILE, 'w') as f:
-        f.write(f"{time_left}")
+        f.write(f"{state} {time_left}")
 
 def log_session(state, duration):
     with open(LOG_FILE, 'a') as f:
@@ -45,15 +45,16 @@ def start_timer(duration, state):
             remaining_time = end_time - datetime.now()
             with open(REMAINING_TIME_FILE, 'w') as f:
                 f.write(f"{remaining_time.seconds}")
+            update_timer(STATE, f"{remaining_time.seconds // 60}:{remaining_time.seconds % 60:02d}")
             return
 
         if STATE == "stopped":
-            update_timer("")
+            update_timer(STATE, "")
             return
 
         remaining_time = end_time - datetime.now()
         minutes, seconds = divmod(remaining_time.seconds, 60)
-        update_timer(f"{minutes}:{seconds:02d}")
+        update_timer(state, f"{minutes}:{seconds:02d}")
         time.sleep(1)
 
     if state == "work":
@@ -70,7 +71,7 @@ def start_timer(duration, state):
             next_state = "break"
             next_duration = BREAK_TIME
     
-    update_timer("0:00")
+    update_timer(next_state, "0:00")
     log_session(state, duration)
     start_timer(next_duration, next_state)
 
@@ -106,17 +107,16 @@ def main():
         STATE = "stopped"
         with open(STATE_FILE, 'w') as f:
             f.write(STATE)
-        update_timer("")
+        update_timer(STATE, "")
     elif command == "set":
         WORK_TIME = int(sys.argv[2])
         BREAK_TIME = int(sys.argv[3])
         LONG_BREAK_TIME = int(sys.argv[4])
     elif command == "status":
         with open(TIMER_FILE, 'r') as f:
-            print(f.read())
+            print(f.read().strip())
     else:
         print("Unknown command")
 
 if __name__ == "__main__":
     main()
-
