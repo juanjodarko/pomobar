@@ -2,28 +2,37 @@
 
 # Get the output from the Python script
 output=$(python ~/.config/polybar/pomodoro/pomodoro.py status)
-icon=$(echo $output | awk '{print $1}')
+state=$(echo $output | awk '{print $1}')
 time=$(echo $output | awk '{print $2}')
 
-# Format the output for Polybar
-case $icon in
-    "work")
-        echo "%{F#F38BA8} $time%{F-}"
+
+# Define icons based on state
+case $state in
+    work)
+        icon=""
+        color="#F38BA8"
         ;;
-    "break")
-        echo "%{F#A6E3A1} $time%{F-}"
+    break)
+        icon=""
+        color="#A6E3A1"
         ;;
-    "long_break")
-        echo "%{F#89DCEB} $time%{F-}"
+    long_break)
+        icon=""
+        color="#89DCEB"
         ;;
-    "paused")
-        echo "%{F#F9E2AF} $time%{F-}"
+    paused)
+        icon=""
+        color="#F9E2AF"
         ;;
-    "stopped")
-        echo "%{F#FAB387} $time%{F-}"
+    stopped)
+        icon=""
+        color="#FAB387"
         ;;
     *)
-        echo "%{F#FFFFFF}$icon $time%{F-}"
+        icon=""
+        color="#FFFFFF"
         ;;
 esac
 
+# Output formatted string for Polybar
+echo "%{F$color}$icon $time%{F-}"

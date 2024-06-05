@@ -15,6 +15,12 @@ REMAINING_TIME_FILE = "/tmp/pomodoro_remaining_time"
 STATE_FILE = "/tmp/pomodoro_state"
 SESSION_FILE = "/tmp/pomodoro_session"
 
+ICON_WORK = ""  # Fire icon from Font Awesome
+ICON_BREAK = ""
+ICON_LONG_BREAK = ""
+ICON_PAUSED = ""
+ICON_STOPPED = ""
+
 # Create log file if it doesn't exist
 if not os.path.exists(LOG_FILE):
     with open(LOG_FILE, 'w') as f:
@@ -84,7 +90,43 @@ def resume_timer():
     with open(SESSION_FILE, 'r') as f:
         CURRENT_SESSION = int(f.read().strip())
     STATE = "running"
-    start_timer(remaining_time / 60, state)
+    end_time = datetime.now() + timedelta(seconds=remaining_time)
+    while datetime.now() < end_time:
+        with open(STATE_FILE, 'r') as f:
+            STATE = f.read().strip()
+        if STATE == "paused":
+            remaining_time = (end_time - datetime.now()).seconds
+            with open(REMAINING_TIME_FILE, 'w') as f:
+                f.write(f"{remaining_time}")
+            update_timer(STATE, f"{remaining_time // 60}:{remaining_time % 60:02d}")
+            return
+
+        if STATE == "stopped":
+            update_timer(STATE, "")
+            return
+
+        remaining_time = (end_time - datetime.now()).seconds
+        minutes, seconds = divmod(remaining_time, 60)
+        update_timer(state, f"{minutes}:{seconds:02d}")
+        time.sleep(1)
+
+    if state == "work":
+        CURRENT_SESSION += 1
+    
+    next_state = "work"
+    next_duration = WORK_TIME
+    if state == "work":
+        if CURRENT_SESSION >= SESSIONS_BEFORE_LONG_BREAK:
+            next_state = "long_break"
+            next_duration = LONG_BREAK_TIME
+            CURRENT_SESSION = 0
+        else:
+            next_state = "break"
+            next_duration = BREAK_TIME
+    
+    update_timer(next_state, "0:00")
+    log_session(state, remaining_time // 60)
+    start_timer(next_duration, next_state)
 
 def main():
     global STATE, WORK_TIME, BREAK_TIME, LONG_BREAK_TIME
